@@ -66,6 +66,9 @@ function showStatus(message, isError = false) {
 }
 
 function playClickSound() {
+  if (navigator.vibrate) {
+    navigator.vibrate(15);
+  }
   if (!soundEnabled || !window.AudioContext) return;
   try {
     const context = new AudioContext();
@@ -238,6 +241,104 @@ function initializeTheme() {
   if (storedTheme === 'light') document.body.classList.add('light-theme');
 }
 
+function initParticles() {
+  const canvas = document.getElementById('particleCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  class Particle {
+    constructor() {
+      this.x = Math.random() * canvas.width;
+      this.y = Math.random() * canvas.height;
+      this.size = Math.random() * 2 + 0.5;
+      this.speedX = Math.random() * 0.8 - 0.4;
+      this.speedY = Math.random() * 0.8 - 0.4;
+      this.opacity = Math.random() * 0.5 + 0.1;
+    }
+    update() {
+      this.x += this.speedX;
+      this.y += this.speedY;
+      if (this.x > canvas.width) this.x = 0;
+      if (this.x < 0) this.x = canvas.width;
+      if (this.y > canvas.height) this.y = 0;
+      if (this.y < 0) this.y = canvas.height;
+    }
+    draw() {
+      const isLight = document.body.classList.contains('light-theme');
+      ctx.fillStyle = isLight ? `rgba(59, 130, 246, ${this.opacity})` : `rgba(124, 58, 237, ${this.opacity})`;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  for (let i = 0; i < 60; i++) particles.push(new Particle());
+
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(p => {
+      p.update();
+      p.draw();
+    });
+    requestAnimationFrame(animate);
+  }
+  animate();
+}
+
+function initTiltEffect() {
+  if (window.matchMedia("(pointer: coarse)").matches) return; // Skip on touch devices
+  const cards = document.querySelectorAll('.glass-card');
+  cards.forEach(card => {
+    card.addEventListener('mousemove', (e) => {
+      const rect = card.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+      const rotateX = ((y - centerY) / centerY) * -4;
+      const rotateY = ((x - centerX) / centerX) * 4;
+      card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+    });
+    card.addEventListener('mouseleave', () => {
+      card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0)';
+    });
+  });
+}
+
+function initTooltips() {
+  const tooltip = document.createElement('div');
+  tooltip.className = 'custom-tooltip';
+  document.body.appendChild(tooltip);
+
+  document.querySelectorAll('[title]').forEach(el => {
+    const titleText = el.getAttribute('title');
+    el.removeAttribute('title'); 
+    el.dataset.customTitle = titleText;
+
+    el.addEventListener('mouseenter', () => {
+      tooltip.textContent = titleText;
+      tooltip.style.opacity = '1';
+    });
+    
+    el.addEventListener('mousemove', (e) => {
+      tooltip.style.left = e.clientX + 15 + 'px';
+      tooltip.style.top = e.clientY + 15 + 'px';
+    });
+
+    el.addEventListener('mouseleave', () => {
+      tooltip.style.opacity = '0';
+    });
+  });
+}
+
 function updateClock() {
   const now = new Date();
   liveClock.textContent = now.toLocaleTimeString('en-US', { hour12: false });
@@ -251,6 +352,9 @@ function finishStartup() {
 
 function startApp() {
   initializeTheme();
+  initParticles();
+  initTiltEffect();
+  initTooltips();
   renderHistory();
   updateScreen();
   updateClock();
