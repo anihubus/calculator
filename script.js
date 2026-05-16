@@ -13,6 +13,12 @@ let currentExpression = '';
 let currentResult = '0';
 let displayedResult = '0';
 let historyItems = [];
+try {
+  const savedHistory = localStorage.getItem('calcHistory');
+  if (savedHistory) historyItems = JSON.parse(savedHistory);
+} catch (e) {
+  console.warn('Failed to parse history:', e);
+}
 let memoryValue = 0;
 let soundEnabled = true;
 
@@ -57,6 +63,7 @@ function updateScreen() {
 function addHistory(expression, result) {
   historyItems.unshift({ expression, result, timestamp: new Date() });
   if (historyItems.length > 12) historyItems.pop();
+  localStorage.setItem('calcHistory', JSON.stringify(historyItems));
   renderHistory();
 }
 
@@ -212,6 +219,7 @@ buttonGrid.addEventListener('click', event => {
 
 clearHistoryBtn.addEventListener('click', () => {
   historyItems = [];
+  localStorage.setItem('calcHistory', JSON.stringify(historyItems));
   renderHistory();
   showStatus('History cleared.');
 });
@@ -262,7 +270,16 @@ window.addEventListener('keydown', event => {
 
 function initializeTheme() {
   const storedTheme = localStorage.getItem('calculatorTheme');
-  if (storedTheme === 'light') document.body.classList.add('light-theme');
+  if (storedTheme === 'light') {
+    document.body.classList.add('light-theme');
+  } else if (storedTheme === 'dark') {
+    document.body.classList.remove('light-theme');
+  } else {
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (!prefersDark) {
+      document.body.classList.add('light-theme');
+    }
+  }
 }
 
 function updateClock() {
