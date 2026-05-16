@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Hackathon Calculator</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="loader-screen" id="loaderScreen">
+    <div class="loader-shell">
+      <span>Loading Smart Calculator</span>
+      <div class="loader-bar"></div>
+    </div>
+  </div>
+
+  <main class="app-shell">
+    <section class="calculator-shell glass-card">
+      <header class="calc-header">
+        <div>
+          <p class="sub-title">Smart Calculator</p>
+          <h1>Quantum Compute</h1>
+        </div>
+        <div class="header-actions">
+          <div class="clock" id="liveClock">00:00:00</div>
+          <button class="toggle-theme" id="themeToggle" type="button" aria-label="Toggle theme">
+            <span class="toggle-track"></span>
+            <span class="toggle-thumb"></span>
+          </button>
+        </div>
+      </header>
+
+      <section class="display-panel glass-inner">
+        <div class="expression-line" id="expressionDisplay">0</div>
+        <div class="result-line" id="resultDisplay">0</div>
+      </section>
+
+      <section class="controls-grid" id="buttonGrid">
+        <button class="calc-btn soft-btn accent" data-action="clear">AC</button>
+        <button class="calc-btn soft-btn" data-action="delete">DEL</button>
+        <button class="calc-btn soft-btn" data-value="(" title="Open parenthesis">(</button>
+        <button class="calc-btn soft-btn" data-value=")" title="Close parenthesis">)</button>
+
+        <button class="calc-btn soft-btn" data-value="sin(" title="sin">sin</button>
+        <button class="calc-btn soft-btn" data-value="cos(" title="cos">cos</button>
+        <button class="calc-btn soft-btn" data-value="tan(" title="tan">tan</button>
+        <button class="calc-btn operator-btn" data-value="÷">÷</button>
+
+        <button class="calc-btn soft-btn" data-value="7">7</button>
+        <button class="calc-btn soft-btn" data-value="8">8</button>
+        <button class="calc-btn soft-btn" data-value="9">9</button>
+        <button class="calc-btn operator-btn" data-value="×">×</button>
+
+        <button class="calc-btn soft-btn" data-value="4">4</button>
+        <button class="calc-btn soft-btn" data-value="5">5</button>
+        <button class="calc-btn soft-btn" data-value="6">6</button>
+        <button class="calc-btn operator-btn" data-value="-">-</button>
+
+        <button class="calc-btn soft-btn" data-value="1">1</button>
+        <button class="calc-btn soft-btn" data-value="2">2</button>
+        <button class="calc-btn soft-btn" data-value="3">3</button>
+        <button class="calc-btn operator-btn" data-value="+">+</button>
+
+        <button class="calc-btn soft-btn" data-action="memoryPlus">M+</button>
+        <button class="calc-btn soft-btn" data-value="0">0</button>
+        <button class="calc-btn soft-btn" data-value=".">.</button>
+        <button class="calc-btn equal-btn" data-action="calculate">=</button>
+
+        <button class="calc-btn soft-btn" data-action="memoryMinus">M-</button>
+        <button class="calc-btn soft-btn" data-action="memoryRecall">MR</button>
+        <button class="calc-btn soft-btn" data-action="memoryClear">MC</button>
+        <button class="calc-btn soft-btn" data-value="%">%</button>
+
+        <button class="calc-btn soft-btn" data-value="sqrt(" title="Square root">√</button>
+        <button class="calc-btn soft-btn" data-value="log(" title="Logarithm">log</button>
+        <button class="calc-btn soft-btn" data-value="^" title="Power">^</button>
+        <button class="calc-btn soft-btn" data-value="!" title="Factorial">!</button>
+      </section>
+
+      <footer class="action-row">
+        <button class="copy-btn soft-btn" id="copyResult" type="button">Copy Result</button>
+        <span class="status-note" id="resultNote">Ready for quantum input.</span>
+      </footer>
+    </section>
+
+    <aside class="history-shell glass-card">
+      <div class="history-header">
+        <h2>History</h2>
+        <button class="history-clear" id="clearHistory" type="button">Clear</button>
+      </div>
+      <div class="history-list" id="historyList">
+        <p class="history-empty">No calculations yet. Tap an equation.</p>
+      </div>
+    </aside>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
