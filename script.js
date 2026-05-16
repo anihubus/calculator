@@ -12,7 +12,14 @@ const liveClock = document.getElementById('liveClock');
 
 let currentExpression = '';
 let currentResult = '0';
+let displayedResult = '0';
 let historyItems = [];
+try {
+  const savedHistory = localStorage.getItem('calcHistory');
+  if (savedHistory) historyItems = JSON.parse(savedHistory);
+} catch (e) {
+  console.warn('Failed to parse history:', e);
+}
 let memoryValue = 0;
 let soundEnabled = true;
 
@@ -25,12 +32,39 @@ function clampDisplay(value) {
 
 function updateScreen() {
   expressionDisplay.textContent = currentExpression || '0';
-  resultDisplay.textContent = clampDisplay(String(currentResult));
+  
+  if (currentExpression.trim()) {
+    let exprToEval = currentExpression;
+    let evalSuccess = false;
+    
+    while (exprToEval.length > 0) {
+      try {
+        const result = safeEvaluate(exprToEval);
+        if (typeof result === 'number' && Number.isFinite(result)) {
+          displayedResult = Number.isInteger(result) ? result : Number(result.toFixed(10));
+          evalSuccess = true;
+          break;
+        }
+      } catch (error) {
+        // Continue loop to try shorter prefix
+      }
+      exprToEval = exprToEval.slice(0, -1);
+    }
+    
+    if (!evalSuccess) {
+      displayedResult = currentResult;
+    }
+  } else {
+    displayedResult = currentResult;
+  }
+  
+  resultDisplay.textContent = clampDisplay(String(displayedResult));
 }
 
 function addHistory(expression, result) {
   historyItems.unshift({ expression, result, timestamp: new Date() });
   if (historyItems.length > 12) historyItems.pop();
+  localStorage.setItem('calcHistory', JSON.stringify(historyItems));
   renderHistory();
 }
 
@@ -67,6 +101,9 @@ function showStatus(message, isError = false) {
 }
 
 function playClickSound() {
+  if (navigator.vibrate) {
+    navigator.vibrate(15);
+  }
   if (!soundEnabled || !window.AudioContext) return;
   try {
     const context = new AudioContext();
@@ -96,49 +133,9 @@ function createRipple(event) {
   ripple.addEventListener('animationend', () => ripple.remove());
 }
 
-function factorial(x) {
-  const n = Math.floor(x);
-  if (n < 0 || n !== x) throw new Error('Factorial only supports non-negative integers');
-  let result = 1;
-  for (let i = 2; i <= n; i += 1) result *= i;
-  return result;
-}
-
 function safeEvaluate(raw) {
-  let expression = raw.replace(/×/g, '*').replace(/÷/g, '/').replace(/ /g, '');
-  expression = expression.replace(/\^/g, '**');
-
-  const functions = {
-    sin: 'Math.sin',
-    cos: 'Math.cos',
-    tan: 'Math.tan',
-    sqrt: 'Math.sqrt',
-    log: 'Math.log',
-  };
-
-  Object.keys(functions).forEach(key => {
-    const regex = new RegExp(`${key.replace(/([.*+?^=!:${}()|[\]\\])/g, '\\$1')}\\(`, 'g');
-    expression = expression.replace(regex, `${functions[key]}(`);
-  });
-
-  expression = expression.replace(/(\d+(?:\.\d+)?)%/g, '($1/100)');
-
-  while (/([^(^\d]\*\*|\d|\))!/.test(expression) || /\d+!/.test(expression)) {
-    const replaced = expression.replace(/(\([^()]*\)|\d+(?:\.\d+)?)!/g, (match, group) => {
-      const value = group.startsWith('(')
-        ? Function(`return ${group}`)()
-        : Number(group);
-      return factorial(value);
-    });
-    if (replaced === expression) break;
-    expression = replaced;
-  }
-
-  if (!/^[0-9+\-*/().%\sMathsincoatgeqrtlog]*$/.test(expression)) {
-    throw new Error('Invalid expression');
-  }
-
-  return Function(`"use strict"; return (${expression})`)();
+  const expression = raw.replace(/×/g, '*').replace(/÷/g, '/');
+  return math.evaluate(expression);
 }
 
 function calculateExpression() {
@@ -149,7 +146,7 @@ function calculateExpression() {
 
   try {
     const result = safeEvaluate(currentExpression);
-    if (!Number.isFinite(result)) throw new Error('Calculation out of range');
+    if (typeof result !== 'number' || !Number.isFinite(result)) throw new Error('Calculation out of range');
     currentResult = Number.isInteger(result) ? result : Number(result.toFixed(10));
     addHistory(currentExpression, currentResult);
     updateScreen();
@@ -184,11 +181,11 @@ function handleCommand(action) {
       calculateExpression();
       break;
     case 'memoryPlus':
-      memoryValue += Number(currentResult) || 0;
+      memoryValue += Number(displayedResult) || 0;
       showStatus('Added to memory.');
       break;
     case 'memoryMinus':
-      memoryValue -= Number(currentResult) || 0;
+      memoryValue -= Number(displayedResult) || 0;
       showStatus('Subtracted from memory.');
       break;
     case 'memoryRecall':
@@ -226,14 +223,15 @@ buttonGrid.addEventListener('click', event => {
 
 clearHistoryBtn.addEventListener('click', () => {
   historyItems = [];
+  localStorage.setItem('calcHistory', JSON.stringify(historyItems));
   renderHistory();
   showStatus('History cleared.');
 });
 
 copyResultBtn.addEventListener('click', async () => {
-  if (!currentResult) return;
+  if (displayedResult === undefined || displayedResult === null || displayedResult === '') return;
   try {
-    await navigator.clipboard.writeText(String(currentResult));
+    await navigator.clipboard.writeText(String(displayedResult));
     showStatus('Result copied.');
   } catch {
     showStatus('Copy failed.', true);
@@ -276,7 +274,114 @@ window.addEventListener('keydown', event => {
 
 function initializeTheme() {
   const storedTheme = localStorage.getItem('calculatorTheme');
-  if (storedTheme === 'light') document.body.classList.add('light-theme');
+  if (storedTheme === 'light') {
+    document.body.classList.add('light-theme');
+  } else if (storedTheme === 'dark') {
+    document.body.classList.remove('light-theme');
+  } else {
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (!prefersDark) {
+      document.body.classList.add('light-theme');
+    }
+  }
+}
+
+function initParticles() {
+  const canvas = document.getElementById('particleCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  class Particle {
+    constructor() {
+      this.x = Math.random() * canvas.width;
+      this.y = Math.random() * canvas.height;
+      this.size = Math.random() * 2 + 0.5;
+      this.speedX = Math.random() * 0.8 - 0.4;
+      this.speedY = Math.random() * 0.8 - 0.4;
+      this.opacity = Math.random() * 0.5 + 0.1;
+    }
+    update() {
+      this.x += this.speedX;
+      this.y += this.speedY;
+      if (this.x > canvas.width) this.x = 0;
+      if (this.x < 0) this.x = canvas.width;
+      if (this.y > canvas.height) this.y = 0;
+      if (this.y < 0) this.y = canvas.height;
+    }
+    draw() {
+      const isLight = document.body.classList.contains('light-theme');
+      ctx.fillStyle = isLight ? `rgba(59, 130, 246, ${this.opacity})` : `rgba(124, 58, 237, ${this.opacity})`;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  for (let i = 0; i < 60; i++) particles.push(new Particle());
+
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(p => {
+      p.update();
+      p.draw();
+    });
+    requestAnimationFrame(animate);
+  }
+  animate();
+}
+
+function initTiltEffect() {
+  if (window.matchMedia("(pointer: coarse)").matches) return; // Skip on touch devices
+  const cards = document.querySelectorAll('.glass-card');
+  cards.forEach(card => {
+    card.addEventListener('mousemove', (e) => {
+      const rect = card.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+      const rotateX = ((y - centerY) / centerY) * -4;
+      const rotateY = ((x - centerX) / centerX) * 4;
+      card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+    });
+    card.addEventListener('mouseleave', () => {
+      card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0)';
+    });
+  });
+}
+
+function initTooltips() {
+  const tooltip = document.createElement('div');
+  tooltip.className = 'custom-tooltip';
+  document.body.appendChild(tooltip);
+
+  document.querySelectorAll('[title]').forEach(el => {
+    const titleText = el.getAttribute('title');
+    el.removeAttribute('title'); 
+    el.dataset.customTitle = titleText;
+
+    el.addEventListener('mouseenter', () => {
+      tooltip.textContent = titleText;
+      tooltip.style.opacity = '1';
+    });
+    
+    el.addEventListener('mousemove', (e) => {
+      tooltip.style.left = e.clientX + 15 + 'px';
+      tooltip.style.top = e.clientY + 15 + 'px';
+    });
+
+    el.addEventListener('mouseleave', () => {
+      tooltip.style.opacity = '0';
+    });
+  });
 }
 
 function updateClock() {
@@ -292,6 +397,9 @@ function finishStartup() {
 
 function startApp() {
   initializeTheme();
+  initParticles();
+  initTiltEffect();
+  initTooltips();
   renderHistory();
   updateScreen();
   updateClock();

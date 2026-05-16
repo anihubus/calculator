@@ -9,8 +9,25 @@
 <body>
   <div class="loader-screen" id="loaderScreen">
     <div class="loader-shell">
-      <span>Loading Smart Calculator</span>
+      <span>System Booting...</span>
       <div class="loader-bar"></div>
+    </div>
+  </div>
+
+  <div class="overlay-gradient"></div>
+  <canvas id="particleCanvas"></canvas>
+
+  <div class="ai-assistant" id="aiAssistant" title="AI Assistant Online">
+    <div class="ai-core"></div>
+    <div class="ai-ring"></div>
+    <div class="ai-ring delay"></div>
+  </div>
+
+  <div class="weather-widget glass-card">
+    <div class="weather-icon">🌧️</div>
+    <div class="weather-info">
+      <span class="weather-city">Cyber-City</span>
+      <span class="weather-temp">72°F Acid Rain</span>
     </div>
   </div>
 
@@ -41,9 +58,9 @@
         <button class="calc-btn soft-btn" data-value="(" title="Open parenthesis">(</button>
         <button class="calc-btn soft-btn" data-value=")" title="Close parenthesis">)</button>
 
-        <button class="calc-btn soft-btn" data-value="sin(" title="sin">sin</button>
-        <button class="calc-btn soft-btn" data-value="cos(" title="cos">cos</button>
-        <button class="calc-btn soft-btn" data-value="tan(" title="tan">tan</button>
+        <button class="calc-btn soft-btn sci-btn" data-value="sin(" title="sin">sin</button>
+        <button class="calc-btn soft-btn sci-btn" data-value="cos(" title="cos">cos</button>
+        <button class="calc-btn soft-btn sci-btn" data-value="tan(" title="tan">tan</button>
         <button class="calc-btn operator-btn" data-value="÷">÷</button>
 
         <button class="calc-btn soft-btn" data-value="7">7</button>
@@ -71,10 +88,10 @@
         <button class="calc-btn soft-btn" data-action="memoryClear">MC</button>
         <button class="calc-btn soft-btn" data-value="%">%</button>
 
-        <button class="calc-btn soft-btn" data-value="sqrt(" title="Square root">√</button>
-        <button class="calc-btn soft-btn" data-value="log(" title="Logarithm">log</button>
-        <button class="calc-btn soft-btn" data-value="^" title="Power">^</button>
-        <button class="calc-btn soft-btn" data-value="!" title="Factorial">!</button>
+        <button class="calc-btn soft-btn sci-btn" data-value="sqrt(" title="Square root">√</button>
+        <button class="calc-btn soft-btn sci-btn" data-value="log(" title="Logarithm">log</button>
+        <button class="calc-btn soft-btn sci-btn" data-value="^" title="Power">^</button>
+        <button class="calc-btn soft-btn sci-btn" data-value="!" title="Factorial">!</button>
       </section>
 
       <footer class="action-row">
@@ -95,8 +112,12 @@
     </aside>
   </main>
 
+<<<<<<< HEAD
   <!-- jsPDF (UMD) for PDF generation -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+=======
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.11.0/math.min.js"></script>
+>>>>>>> 8296b42ec957d3e55ac4bfcf5b247c01df48820f
   <script src="script.js"></script>
 </body>
 </html>
