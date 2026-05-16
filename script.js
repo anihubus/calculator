@@ -11,6 +11,7 @@ const liveClock = document.getElementById('liveClock');
 
 let currentExpression = '';
 let currentResult = '0';
+let displayedResult = '0';
 let historyItems = [];
 let memoryValue = 0;
 let soundEnabled = true;
@@ -24,7 +25,33 @@ function clampDisplay(value) {
 
 function updateScreen() {
   expressionDisplay.textContent = currentExpression || '0';
-  resultDisplay.textContent = clampDisplay(String(currentResult));
+  
+  if (currentExpression.trim()) {
+    let exprToEval = currentExpression;
+    let evalSuccess = false;
+    
+    while (exprToEval.length > 0) {
+      try {
+        const result = safeEvaluate(exprToEval);
+        if (typeof result === 'number' && Number.isFinite(result)) {
+          displayedResult = Number.isInteger(result) ? result : Number(result.toFixed(10));
+          evalSuccess = true;
+          break;
+        }
+      } catch (error) {
+        // Continue loop to try shorter prefix
+      }
+      exprToEval = exprToEval.slice(0, -1);
+    }
+    
+    if (!evalSuccess) {
+      displayedResult = currentResult;
+    }
+  } else {
+    displayedResult = currentResult;
+  }
+  
+  resultDisplay.textContent = clampDisplay(String(displayedResult));
 }
 
 function addHistory(expression, result) {
@@ -108,7 +135,7 @@ function calculateExpression() {
 
   try {
     const result = safeEvaluate(currentExpression);
-    if (!Number.isFinite(result)) throw new Error('Calculation out of range');
+    if (typeof result !== 'number' || !Number.isFinite(result)) throw new Error('Calculation out of range');
     currentResult = Number.isInteger(result) ? result : Number(result.toFixed(10));
     addHistory(currentExpression, currentResult);
     updateScreen();
@@ -143,11 +170,11 @@ function handleCommand(action) {
       calculateExpression();
       break;
     case 'memoryPlus':
-      memoryValue += Number(currentResult) || 0;
+      memoryValue += Number(displayedResult) || 0;
       showStatus('Added to memory.');
       break;
     case 'memoryMinus':
-      memoryValue -= Number(currentResult) || 0;
+      memoryValue -= Number(displayedResult) || 0;
       showStatus('Subtracted from memory.');
       break;
     case 'memoryRecall':
@@ -190,9 +217,9 @@ clearHistoryBtn.addEventListener('click', () => {
 });
 
 copyResultBtn.addEventListener('click', async () => {
-  if (!currentResult) return;
+  if (displayedResult === undefined || displayedResult === null || displayedResult === '') return;
   try {
-    await navigator.clipboard.writeText(String(currentResult));
+    await navigator.clipboard.writeText(String(displayedResult));
     showStatus('Result copied.');
   } catch {
     showStatus('Copy failed.', true);
