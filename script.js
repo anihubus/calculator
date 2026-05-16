@@ -95,49 +95,9 @@ function createRipple(event) {
   ripple.addEventListener('animationend', () => ripple.remove());
 }
 
-function factorial(x) {
-  const n = Math.floor(x);
-  if (n < 0 || n !== x) throw new Error('Factorial only supports non-negative integers');
-  let result = 1;
-  for (let i = 2; i <= n; i += 1) result *= i;
-  return result;
-}
-
 function safeEvaluate(raw) {
-  let expression = raw.replace(/×/g, '*').replace(/÷/g, '/').replace(/ /g, '');
-  expression = expression.replace(/\^/g, '**');
-
-  const functions = {
-    sin: 'Math.sin',
-    cos: 'Math.cos',
-    tan: 'Math.tan',
-    sqrt: 'Math.sqrt',
-    log: 'Math.log',
-  };
-
-  Object.keys(functions).forEach(key => {
-    const regex = new RegExp(`${key.replace(/([.*+?^=!:${}()|[\]\\])/g, '\\$1')}\\(`, 'g');
-    expression = expression.replace(regex, `${functions[key]}(`);
-  });
-
-  expression = expression.replace(/(\d+(?:\.\d+)?)%/g, '($1/100)');
-
-  while (/([^(^\d]\*\*|\d|\))!/.test(expression) || /\d+!/.test(expression)) {
-    const replaced = expression.replace(/(\([^()]*\)|\d+(?:\.\d+)?)!/g, (match, group) => {
-      const value = group.startsWith('(')
-        ? Function(`return ${group}`)()
-        : Number(group);
-      return factorial(value);
-    });
-    if (replaced === expression) break;
-    expression = replaced;
-  }
-
-  if (!/^[0-9+\-*/().%\sMathsincoatgeqrtlog]*$/.test(expression)) {
-    throw new Error('Invalid expression');
-  }
-
-  return Function(`"use strict"; return (${expression})`)();
+  const expression = raw.replace(/×/g, '*').replace(/÷/g, '/');
+  return math.evaluate(expression);
 }
 
 function calculateExpression() {
